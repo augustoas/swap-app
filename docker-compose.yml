@@ -1,0 +1,38 @@
+services:
+  # BACKEND SERVICE
+  backend:
+    build: ./backend
+    volumes:
+      - ./uploads:/app/uploads/:rw
+    ports:
+      - "4000:4000"
+    restart: always
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+
+  # FRONTEND SERVICE
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./uploads:/app/uploads/:rw
+    ports:
+      - "3000:3000"
+    restart: always
+
+  # POSTGRES DATABASE
+  postgres:
+    image: postgres:15.3-alpine3.18
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      - POSTGRES_USER=swap
+      - POSTGRES_PASSWORD=swapSWAPswapSWAP12345
+      - POSTGRES_DB=swapdb
+    volumes:
+      - swapp-volume:/var/lib/postgresql/data:rw
+
+volumes:
+  swapp-volume:

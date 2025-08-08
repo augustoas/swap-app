@@ -3,7 +3,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   const userStore = useUserStore();
   // Create a customized API instance using $fetch
   const api = $fetch.create({
-    baseURL: 'http://localhost:4000/backend/', // Base URL for API requests
+    baseURL: 'http://host.docker.internal:4000/backend/', // Base URL for API requests
     // baseURL: 'http://34.23.210.192/backend',
     // This hook is executed before every request
     onRequest({ request, options, error }) {
