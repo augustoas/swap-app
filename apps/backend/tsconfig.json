@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", // Consistent with module
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext", // Explicitly set, important for Node.js ESM
+    "declaration": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"] // More conventional alias
+    },
+    "esModuleInterop": true, // Replaces allowSyntheticDefaultImports
+    "forceConsistentCasingInFileNames": true, // Important for cross-platform compatibility
+    "skipLibCheck": true,
+    "sourceMap": true, // Keep for debugging
+    "incremental": true, // Keep for faster compilation
+    "resolveJsonModule": true,
+    "removeComments": true, // Good for production builds
+    "emitDecoratorMetadata": true, // Needed if you use decorators
+    "experimentalDecorators": true, // Needed if you use decorators
+    "isolatedModules": true,                // Required for NodeNext + ts-jest
+    "strict": false,                         // Strong typing and safer code
+    "types": ["node", "jest"]               // Helpful for test environment
+
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"], // Explicitly include source files
+  "exclude": ["node_modules", "dist"] // Explicitly exclude these directories
+}

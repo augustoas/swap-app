@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Offer Received</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>¡Nueva Oferta Recibida!</h1>
+        </div>
+        
+        <p>Hola {{name}},</p>
+        
+        <p>¡Felicitaciones! Has recibido una nueva oferta para tu trabajo #{{jobId}}.</p>
+        
+        <div style="text-align: center;">
+            <a href="{{url}}" class="button">Ver Oferta</a>
+        </div>
+        
+        <p>No pierdas esta oportunidad. Revisa la oferta lo antes posible para mantener el interés de los profesionales.</p>
+        
+        <div class="footer">
+            <p>Este es un mensaje automático, por favor no responda a este correo.</p>
+        </div>
+    </div>
+</body>
+</html>
