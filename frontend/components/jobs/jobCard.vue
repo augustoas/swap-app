@@ -50,15 +50,46 @@
           {{ getOfferStatusText(job.offerInfo.status) }}
         </v-chip>
       </div>
-      <!-- Normal budget display -->
-      <span v-else class="job-budget">
-        {{ job.accepted_budget ? `Pagado: ${formatCurrency(job.accepted_budget)}` : formatCurrency(job.budget) }}
-      </span>
+      
+      <!-- Show client payment info for confirmed jobs -->
+      <div v-else-if="isConfirmedJobForClient" class="client-payment-info">
+        <div class="payment-comparison-client">
+          <span class="original-price">{{ formatCurrency(job.budget) }}</span>
+          <span class="paid-price">{{ formatCurrency(job.accepted_budget) }}</span>
+        </div>
+        <v-chip 
+          color="success" 
+          size="small" 
+          class="payment-status-chip"
+        >
+          Pagado
+        </v-chip>
+      </div>
+      <!-- Normal budget display with counters -->
+      <div v-else class="budget-and-counters">
+        <div class="budget-info">
+          <span v-if="job.accepted_budget" class="payment-status">Pagada</span>
+          <span class="job-budget">
+            {{ job.accepted_budget ? formatCurrency(job.accepted_budget) : formatCurrency(job.budget) }}
+          </span>
+        </div>
+        <div class="job-counters">
+          <div v-if="job.offers && job.offers.length > 0" class="counter offers-counter">
+            <v-icon size="small" color="var(--base-dark-blue)">mdi-briefcase-variant</v-icon>
+            <span>{{ job.offers.length }}</span>
+          </div>
+          <div v-if="unansweredQuestionsCount > 0" class="counter questions-counter">
+            <v-icon size="small" color="var(--base-dark-blue)">mdi-help-circle</v-icon>
+            <span>{{ unansweredQuestionsCount }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { formatDate, formatCurrency } from '~/utils/utils';
 import { dateTypeMap } from '~/utils/mapKeys';
 
@@ -74,6 +105,24 @@ const props = defineProps({
 const truncatedDescription = (description) => {
   return description.length > 50 ? description.slice(0, 50) + '...' : description;
 };
+
+// Calculate unanswered questions count
+const unansweredQuestionsCount = computed(() => {
+  if (!props.job.questions || !Array.isArray(props.job.questions)) {
+    return 0;
+  }
+  
+  return props.job.questions.filter(question => 
+    !question.replies || question.replies.length === 0
+  ).length;
+});
+
+// Check if this is a confirmed job for the client (has accepted_budget and no offerInfo)
+const isConfirmedJobForClient = computed(() => {
+  return props.job.accepted_budget && 
+         !props.job.offerInfo && 
+         props.job.status === 'confirmed';
+});
 
 // Offer status helpers
 const getOfferStatusColor = (status) => {
@@ -308,6 +357,21 @@ const getOfferStatusText = (status) => {
   }
 }
 
+.budget-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.payment-status {
+  color: #4caf50;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .job-budget {
   color: var(--base-dark-blue);
   font-weight: bold;
@@ -330,6 +394,37 @@ const getOfferStatusText = (status) => {
   margin-top: 4px;
 }
 
+.client-payment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.payment-comparison-client {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.original-price {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+.paid-price {
+  color: var(--base-dark-blue);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.payment-status-chip {
+  margin-top: 2px;
+}
+
 /* Responsive styles for offer info */
 @media (max-width: 768px) {
   .offer-budget-info {
@@ -338,6 +433,18 @@ const getOfferStatusText = (status) => {
   
   .offer-budget {
     font-size: 13px;
+  }
+  
+  .client-payment-info {
+    gap: 4px;
+  }
+  
+  .original-price {
+    font-size: 13px;
+  }
+  
+  .paid-price {
+    font-size: 15px;
   }
 }
 
@@ -349,6 +456,48 @@ const getOfferStatusText = (status) => {
   .offer-budget {
     font-size: 12px;
   }
+  
+  .client-payment-info {
+    gap: 3px;
+  }
+  
+  .original-price {
+    font-size: 12px;
+  }
+  
+  .paid-price {
+    font-size: 14px;
+  }
+}
+
+/* Budget and counters layout */
+.budget-and-counters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.job-counters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(42, 43, 71, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--base-dark-blue);
+}
+
+.counter span {
+  line-height: 1;
 }
 
 /* Responsive styles for job budget */
@@ -356,11 +505,37 @@ const getOfferStatusText = (status) => {
   .job-budget {
     font-size: 14px;
   }
+  
+  .payment-status {
+    font-size: 11px;
+  }
+  
+  .job-counters {
+    gap: 8px;
+  }
+  
+  .counter {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {
   .job-budget {
     font-size: 12px;
+  }
+  
+  .payment-status {
+    font-size: 10px;
+  }
+  
+  .job-counters {
+    gap: 6px;
+  }
+  
+  .counter {
+    padding: 2px 5px;
+    font-size: 10px;
   }
 }
 </style>

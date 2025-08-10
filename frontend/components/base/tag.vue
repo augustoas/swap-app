@@ -18,7 +18,7 @@ const props = defineProps({
     type: String,
     required: true,
     validator: (value: string) => {
-      return ['offer', 'online', 'status', 'today', 'near', 'pet', 'category', 'offered'].includes(value)
+      return ['offer', 'online', 'status', 'today', 'near', 'pet', 'category', 'offered', 'question'].includes(value)
     }
   },
   icon: {
@@ -95,5 +95,9 @@ const tagType = computed(() => props.type);
 
 .offered {
   background-color: #28a745;
+}
+
+.question {
+  background-color: #ff6b35;
 }
 </style>

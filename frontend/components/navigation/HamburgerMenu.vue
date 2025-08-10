@@ -82,6 +82,7 @@
             </div>
           </div>
 
+
           <!-- Logout Section -->
           <div v-if="userStore.isLoggedIn()" class="logout-section">
             <div class="section-divider"></div>
@@ -155,6 +156,11 @@ const navigateToJobs = () => {
 };
 
 const navigateToPost = () => {
+  if (!userStore.isLoggedIn()) {
+    router.push('/login');
+    closeDrawer();
+    return;
+  }
   router.push('/post');
   navigationStore.setSelectedItem(2);
   closeDrawer();
@@ -328,6 +334,8 @@ const logout = () => {
   border-radius: 12px;
   background-color: rgba(0, 0, 0, 0.02);
 }
+
+
 
 .logout-section {
   padding: 0 8px;

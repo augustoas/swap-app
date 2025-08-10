@@ -187,7 +187,7 @@ export class JobsService {
   async findJobsByUserId(userId: number): Promise<Job[]> {
     const jobs = await this.jobRepository.find({
       where: { jobCreator: { id: userId } },
-      relations: ['jobWorker', 'jobCreator', 'offers', 'offers.user'],
+      relations: ['jobWorker', 'jobCreator', 'offers', 'offers.user', 'questions', 'questions.user', 'questions.replies'],
       order: {
         createdDate: 'DESC',
       },

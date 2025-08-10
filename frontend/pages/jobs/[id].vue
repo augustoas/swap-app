@@ -201,20 +201,57 @@
           Una vez terminado, el trabajo pasará a estado finalizado.
         </p>
       </div>
+
+      <!-- Show payment info for swapper when job is confirmed -->
+      <div v-else-if="isSwapperViewingConfirmedJob" class="swapper-payment-info">
+        <div class="payment-comparison">
+          <div class="original-budget">
+            <span class="budget-label">Precio original:</span>
+            <span class="budget-amount-small">{{ formatCurrency(job.budget) }}</span>
+          </div>
+          <div class="accepted-budget">
+            <span class="budget-label">Tu oferta aceptada:</span>
+            <span class="budget-amount-highlight">{{ formatCurrency(currentUserOffer?.budget || job.accepted_budget) }}</span>
+          </div>
+        </div>
+        <div class="payment-guarantee">
+          <p class="guarantee-text">
+            💰 El dinero lo tenemos en Swap, no te preocupes que tu trabajo será remunerado.
+          </p>
+          <p class="guarantee-subtext">
+            Una vez que el cliente confirme que el trabajo está completado, recibirás el pago automáticamente.
+          </p>
+        </div>
+      </div>
       
-      <!-- Show simple offer info if user already made an offer -->
+            <!-- Show simple offer info if user already made an offer -->
       <div v-else-if="!isJobCreator && hasUserMadeOffer" class="simple-offer-info">
         <p class="offer-label">Oferta ya realizada:</p>
         <p class="offer-value">{{ formatCurrency(currentUserOffer.budget) }}</p>
-        <v-btn
-          variant="outlined"
-          color="error"
-          size="small"
-          @click="cancelOffer"
-          class="cancel-offer-btn"
-        >
-          Cancelar oferta
-        </v-btn>
+        <v-dialog v-model="showCancelDialog" transition="dialog-transition">
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-btn
+              variant="outlined"
+              color="error"
+              size="small"
+              v-bind="activatorProps"
+              class="cancel-offer-btn"
+            >
+              Cancelar oferta
+            </v-btn>
+          </template>
+          <template v-slot:default="{ isActive }">
+            <BaseModal
+              @accept="confirmCancelOffer"
+              @decline="showCancelDialog = false"
+              title="¿Cancelar oferta?"
+              message="¿Estás seguro que deseas cancelar tu oferta? Esta acción no se puede deshacer."
+              acceptText="Cancelar oferta"
+              declineText="Mantener oferta"
+              :isLoading="isCancellingOffer"
+            />
+          </template>
+        </v-dialog>
       </div>
       
       <!-- Show make offer button if user hasn't made an offer yet -->
@@ -245,7 +282,7 @@
     <!-- Tabs Section for Job Creator -->
     <div v-if="isJobCreator && !isEditMode">
       <v-tabs v-model="activeTab" color="var(--base-dark-blue)">
-        <v-tab value="questions">Preguntas</v-tab>
+        <v-tab value="questions">Preguntas ({{ formattedQuestions.length }})</v-tab>
         <v-tab value="offers">Ofertas ({{ formattedOffers.length }})</v-tab>
       </v-tabs>
 
@@ -442,6 +479,10 @@ const showEditConfirmModal = ref(false);
 // Finish Job State
 const showFinishJobModal = ref(false);
 const isFinishingJob = ref(false);
+
+// Cancel Offer State
+const showCancelDialog = ref(false);
+const isCancellingOffer = ref(false);
 
 // Edit Mode Options
 const dateTypeOptions = [
@@ -832,34 +873,43 @@ const handleOfferCreated = async () => {
   await fetchUserOffers();
 };
 
-// Cancel offer function
-const cancelOffer = async () => {
+// Cancel offer function with confirmation
+const confirmCancelOffer = async () => {
   if (!currentUserOffer.value) return;
+  
+  isCancellingOffer.value = true;
   
   try {
     await offerRepository.delete(currentUserOffer.value.id);
     await fetchUserOffers(); // Refresh user offers
-    useAlertStore().showAlert('Oferta cancelada exitosamente', 'success');
+    showCancelDialog.value = false;
+    useAlertStore().setAlert('success', 'Oferta cancelada exitosamente');
   } catch (error) {
     console.error('Error canceling offer:', error);
-    useAlertStore().showAlert('Error al cancelar la oferta', 'error');
+    useAlertStore().setAlert('error', 'Error al cancelar la oferta');
+  } finally {
+    isCancellingOffer.value = false;
   }
 };
 
-// Check if job can be finished
+// Check if job can be finished - ONLY job creator can finish
 const canFinishJob = computed(() => {
-  // Both job creator (client) and swapper can finish a confirmed job
+  // Only job creator (client) can finish a confirmed job
   if (!job.value || job.value.status !== 'confirmed') return false;
   
-  // Job creator can always finish
-  if (isJobCreator.value) return true;
+  // Only job creator can finish
+  return isJobCreator.value;
+});
+
+// Check if swapper is viewing a confirmed job where they are the worker
+const isSwapperViewingConfirmedJob = computed(() => {
+  if (!job.value || job.value.status !== 'confirmed') return false;
   
-  // Swapper can finish if they have an accepted offer for this job
-  if (hasUserMadeOffer.value && currentUserOffer.value && currentUserOffer.value.status === 'accepted') {
-    return true;
-  }
-  
-  return false;
+  // Check if current user is the swapper (job worker) for this confirmed job
+  const currentUserId = userStore.getUser?.id || currentUser.value?.id;
+  return !isJobCreator.value && 
+         job.value.jobWorker && 
+         job.value.jobWorker.id === currentUserId;
 });
 
 // Finish job function
@@ -1394,6 +1444,100 @@ strong {
   color: #666;
   padding: 20px;
   font-size: 16px;
+}
+
+.swapper-payment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
+.payment-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.original-budget, .accepted-budget {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.budget-label {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.budget-amount-small {
+  font-size: 16px;
+  color: #6c757d;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.budget-amount-highlight {
+  font-size: 18px;
+  color: var(--base-dark-blue);
+  font-weight: 700;
+}
+
+.payment-guarantee {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.guarantee-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2e7d32;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guarantee-subtext {
+  font-size: 13px;
+  color: #388e3c;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Responsive design for swapper payment info */
+@media (max-width: 768px) {
+  .swapper-payment-info {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .budget-label {
+    font-size: 13px;
+  }
+
+  .budget-amount-small {
+    font-size: 14px;
+  }
+
+  .budget-amount-highlight {
+    font-size: 16px;
+  }
+
+  .guarantee-text {
+    font-size: 14px;
+  }
+
+  .guarantee-subtext {
+    font-size: 12px;
+  }
 }
 
 /* Responsive design for edit form */

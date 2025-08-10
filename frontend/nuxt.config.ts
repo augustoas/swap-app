@@ -2,6 +2,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
   modules: ["vuetify-nuxt-module", "@vite-pwa/nuxt", "@pinia/nuxt"],
+  // Development server configuration
+  devServer: {
+    host: '0.0.0.0', // Allow connections from outside container
+    port: 3000
+  },
   vuetify: {
     moduleOptions: {
       /* module specific options */

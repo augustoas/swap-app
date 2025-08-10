@@ -8,7 +8,13 @@
         <li class="messages">
           <div class="messages-icons" v-if="userStore.isLoggedIn()">
             <div class="notification-wrapper">
-              <v-dialog scrollable :fullscreen="notificationFullScreen">
+              <v-dialog 
+                scrollable 
+                :fullscreen="notificationFullScreen"
+                persistent
+                transition="dialog-transition"
+                content-class="notification-dialog"
+              >
                 <template v-slot:activator="{ props: activatorProps }">
                   <v-btn stacked variant="text" density="compact" v-bind="activatorProps" class="notification-btn">
                     <v-badge
@@ -52,6 +58,12 @@
               </v-badge>
             </NuxtLink>
           </div>
+          <!-- Mobile login button -->
+          <div v-if="!userStore.isLoggedIn()" class="mobile-login">
+            <NuxtLink to="/login" class="mobile-login-btn">
+              Iniciar sesión
+            </NuxtLink>
+          </div>
         </li>
       </ul>
     </nav>
@@ -71,7 +83,7 @@
             <NuxtLink to="/jobs" @click="handleBottomTabUpdate(1)" class="nav-link">Explorar</NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink to="/post" @click="handleBottomTabUpdate(2)" class="nav-link">Publicar</NuxtLink>
+            <a @click="handlePublicarClick" class="nav-link" style="cursor: pointer;">Publicar</a>
           </li>
           <li class="nav-item" v-if="userStore.isLoggedIn()">
             <NuxtLink to="/schedule" @click="handleBottomTabUpdate(3)" class="nav-link">Mi Agenda</NuxtLink>
@@ -83,7 +95,13 @@
         <div class="right-items">
           <li class="nav-item icons-group" v-if="userStore.isLoggedIn()">
             <div class="notification-wrapper">
-              <v-dialog scrollable :fullscreen="notificationFullScreen">
+              <v-dialog 
+                scrollable 
+                :fullscreen="notificationFullScreen"
+                persistent
+                transition="dialog-transition"
+                content-class="notification-dialog"
+              >
                 <template v-slot:activator="{ props: activatorProps }">
                   <v-btn stacked variant="text" density="compact" v-bind="activatorProps" class="notification-btn">
                     <v-badge
@@ -127,11 +145,11 @@
               </v-badge>
             </NuxtLink>
           </li>
-          <li class="nav-item" v-if="!userStore.isLoggedIn()">
-            <NuxtLink to="/login" @click="handleBottomTabUpdate(4)" class="nav-link">
+          <div class="auth-buttons" v-if="!userStore.isLoggedIn()">
+            <NuxtLink to="/login" class="login-btn nav-link">
               Iniciar sesión
             </NuxtLink>
-          </li>
+          </div>
         </div>
       </ul>
     </nav>
@@ -172,9 +190,14 @@ const unreadMessagesCount = computed(() => {
   if (!chat.value) return 0;
   
   try {
-    return chat.value.chatRoomsList.value.reduce((total: number, room: ChatRoomPreview) => {
+    const chatRoomsList = chat.value.chatRoomsList?.value;
+    if (!chatRoomsList || !Array.isArray(chatRoomsList)) {
+      return 0;
+    }
+    
+    return chatRoomsList.reduce((total: number, room: ChatRoomPreview) => {
       const roomState = chat.value.getChatRoomState(room.id);
-      return total + roomState.unreadCount;
+      return total + (roomState?.unreadCount || 0);
     }, 0);
   } catch (error) {
     console.error('Error calculating unread messages count:', error);
@@ -263,6 +286,17 @@ onUnmounted(() => {
 const handleBottomTabUpdate = (index : number) => {
   navigationStore.setSelectedItem(index);
 };
+
+const handlePublicarClick = () => {
+  if (!userStore.isLoggedIn()) {
+    navigateTo('/login');
+    return;
+  }
+  handleBottomTabUpdate(2);
+  navigateTo('/post');
+};
+
+
 </script>
 
 <style lang="scss" scoped>
@@ -545,5 +579,71 @@ const handleBottomTabUpdate = (index : number) => {
 
 :deep(.notification-badge), :deep(.message-badge) {
   position: relative;
+}
+
+// Notification dialog centering
+:deep(.notification-dialog) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:deep(.v-overlay__content) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  
+  @media (max-width: 1024px) {
+    display: none; // Ocultar en mobile
+  }
+}
+
+.login-btn {
+  // Usar mismo estilo que otros nav-links
+  text-decoration: none;
+  color: var(--base-dark-blue);
+  font-weight: 500;
+  font-size: 15px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--base-dark-blue);
+  }
+  
+  @media (max-width: 1200px) {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+
+.mobile-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-login-btn {
+  text-decoration: none;
+  color: var(--base-dark-blue);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--base-dark-blue);
+  }
 }
 </style>

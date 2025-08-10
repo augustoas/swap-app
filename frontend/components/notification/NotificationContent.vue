@@ -83,8 +83,20 @@ const props = defineProps<{
   isFullscreen: boolean;
 }>();
 
+const emit = defineEmits(['close']);
+
 const handleCheckResource = (notification: Notification) => {
   console.log('Checking resource for notification:', notification);
+  
+  if (notification.path) {
+    // Close the notification dialog first
+    emit('close');
+    
+    // Navigate to the specified path
+    navigateTo(notification.path);
+  } else {
+    console.warn('Notification has no path specified:', notification);
+  }
 };
 
 const handleDeleteNotification = async (notification: Notification) => {
@@ -166,6 +178,15 @@ const handleDeleteNotification = async (notification: Notification) => {
     
     .action-btn {
       margin-left: 4px;
+      color: white !important;
+      
+      :deep(.v-btn__content) {
+        color: white !important;
+      }
+      
+      :deep(.v-icon) {
+        color: white !important;
+      }
     }
   }
   

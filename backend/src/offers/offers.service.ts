@@ -34,6 +34,15 @@ export class OffersService {
     if (job.status !== Job_Status.PUBLISHED) throw new BadRequestException('This job is not published');
     if (job.jobCreator.id === user.id) throw new BadRequestException('You cannot offer to your own job');
     if (job.jobWorker !== null) throw new BadRequestException('This job already has a worker');
+    
+    // Check if user already has an offer for this job
+    const existingOffer = await this.offerRepository.findOne({
+      where: { 
+        user: { id: user.id },
+        job: { id: jobId }
+      }
+    });
+    if (existingOffer) throw new BadRequestException('You have already made an offer for this job');
 
     // Send notification to the person who created the offer
     this.notificationWebSocketService.sendOfferNotification(
@@ -114,6 +123,7 @@ export class OffersService {
       // Update the job status
       offer.job.status = Job_Status.CONFIRMED;
       offer.job.jobWorker = offer.user;
+      offer.job.accepted_budget = offer.budget; // Set the accepted budget to the offer budget
       await manager.save(offer.job);
 
       // Update all other pending offers to cancelled
@@ -157,21 +167,6 @@ export class OffersService {
         jobWorkerId: offer.user.id.toString(),
         isActive: true,
       });
-
-      // Send notifications about chat room creation
-      this.notificationWebSocketService.sendChatNotification(
-        offer.user.id,
-        offer.job.jobCreator.firstname,
-        chatRoom.id,
-        offer.job.description
-      );
-
-      this.notificationWebSocketService.sendChatNotification(
-        offer.job.jobCreator.id,
-        offer.user.firstname,
-        chatRoom.id,
-        offer.job.description
-      );
 
       console.log(`Chat room created for job ${offer.job.id}: ${chatRoom.id}`);
     } catch (error) {

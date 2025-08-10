@@ -215,6 +215,12 @@ const services = [
 
 // Navigation function
 const navigateTo = (path) => {
+  // Check if user is trying to access /post and is not logged in
+  if (path === '/post' && !userStore.isLoggedIn()) {
+    router.push('/login');
+    return;
+  }
+  
   // Update bottom tab if needed
   if (path === '/post') {
     navigationStore.setSelectedItem(2); // Assuming 2 is the index for the post tab

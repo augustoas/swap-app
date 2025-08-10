@@ -42,6 +42,11 @@
                   tag="Nueva oferta" 
                   type="offer" 
                 />
+                <BaseTag 
+                  v-if="job.questions && hasUnreadQuestions(job)"
+                  tag="Nueva pregunta" 
+                  type="question" 
+                />
               </template>
             </JobsJobCard>
           </div>
@@ -205,8 +210,8 @@ watch(isSwapperMode, (newMode) => {
   }
 });
 
-// Fetch job data when the component is mounted
-onMounted(async () => {
+// Function to refresh data
+const refreshData = async () => {
   try {
     // Fetch regular jobs (as creator)
     const jobs = await jobRepository.findMyJobs();
@@ -216,21 +221,29 @@ onMounted(async () => {
     if (isSwapper.value) {
       const offers = await offerRepository.findMyOffers();
       userOffers.value = offers.payload || [];
-      console.log('User offers fetched:', userOffers.value);
+      console.log('User offers refreshed:', userOffers.value);
       
       // Fetch finished jobs for swapper
       try {
         const finishedJobs = await jobRepository.findSwapperFinishedJobs();
         swapperFinishedJobs.value = finishedJobs.payload || [];
-        console.log('Swapper finished jobs fetched:', swapperFinishedJobs.value);
+        console.log('Swapper finished jobs refreshed:', swapperFinishedJobs.value);
       } catch (error) {
         console.error('Error fetching swapper finished jobs:', error);
-        // Don't break the whole flow if this fails
         swapperFinishedJobs.value = [];
       }
     }
   } catch (error) {
-    console.error('Error fetching job data:', error);
+    console.error('Error fetching jobs:', error);
+  }
+};
+
+// Watch for route query changes to refresh when coming back from job detail
+watch(() => router.currentRoute.value.query.redirect, (newRedirect, oldRedirect) => {
+  if (newRedirect === '/schedule') {
+    // User came back from job detail, refresh data
+    console.log('Detected return from job detail, refreshing data...');
+    refreshData();
   }
 });
 
@@ -351,6 +364,29 @@ const getFinishedOffers = computed(() => {
   // Return combined array, with finished jobs first
   return [...finishedJobs, ...rejectedOffers];
 });
+
+// Helper function to check for unanswered questions
+const hasUnansweredQuestions = (job) => {
+  if (!job.questions || !Array.isArray(job.questions)) {
+    return false;
+  }
+  
+  return job.questions.some(question => 
+    !question.replies || question.replies.length === 0
+  );
+};
+
+// Helper function to check for unread questions
+const hasUnreadQuestions = (job) => {
+  if (!job.questions || !Array.isArray(job.questions)) {
+    return false;
+  }
+  
+  return job.questions.some(question => !question.is_read);
+};
+
+// Initialize data on mount
+onMounted(refreshData);
 </script>
 
 <style lang="scss" scoped>

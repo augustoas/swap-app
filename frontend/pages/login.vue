@@ -177,6 +177,7 @@
   const firstName = ref('')
   const lastName = ref('')
   const showPassword = ref(false)
+  
   const currentComponent = ref(props.component)
 
   const emailInput = ref(null)

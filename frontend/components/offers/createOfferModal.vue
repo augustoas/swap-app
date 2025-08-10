@@ -68,7 +68,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'offer-created']);
 
 const budgetInput = ref(null);
 const formattedBudget = ref('');
@@ -127,6 +127,7 @@ const handleCreateOffer = async () => {
       jobId: props.job_id
     });
     useAlertStore().setAlert('success', 'Oferta creada correctamente');
+    emit('offer-created'); // Emit event to trigger page refresh
     handleClose();
   } catch (error) {
     console.error(error);

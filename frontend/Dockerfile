@@ -13,11 +13,8 @@ RUN npm ci
 # Copy the rest of the application code to the container
 COPY . .
 
-# Run the build command which creates the production bundle
-RUN npm run build
-
 # Expose the port your Nuxt.js app is running on
 EXPOSE 3000
 
-# Define the command to start your Nuxt.js app
-CMD ["node", ".output/server/index.mjs"]
+# Default command for development (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]
